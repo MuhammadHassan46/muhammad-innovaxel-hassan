@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template, redirect, abort
 from models import db, URL, generate_short_code
+from validators import is_valid_url
 from config import Config
 
 app = Flask(__name__)
@@ -12,7 +13,13 @@ with app.app_context():
 @app.route('/shorten', methods=['POST'])
 def create_short_url():
     data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({'error': 'URL is required'}), 400
+
     original_url = data['url']
+    if not is_valid_url(original_url):
+        return jsonify({'error': 'Invalid URL format'}), 400
+
     short_code = generate_short_code()
     new_url = URL(original_url=original_url, short_code=short_code)
     db.session.add(new_url)
